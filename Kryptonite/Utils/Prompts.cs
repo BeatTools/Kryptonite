@@ -1,4 +1,5 @@
-﻿using Kryptonite.Types;
+﻿using System.Diagnostics;
+using Kryptonite.Types;
 
 namespace Kryptonite.Utils;
 
@@ -97,10 +98,11 @@ internal static class Prompts
     {
         Terminal.Log($"Selected instance: {instance.name}", true);
 
-        Terminal.Log(@"1. Launch Beat Saber");
-        Terminal.Log(@"2. Change the version of Beat Saber");
-        Terminal.Log(@"3. Delete the instance");
-        Terminal.Log(@"4. Exit");
+        Terminal.Log("1. Launch Beat Saber");
+        Terminal.Log("2. Change the version of Beat Saber");
+        Terminal.Log("3. Delete the instance");
+        Terminal.Log("4. Open instance folder");
+        Terminal.Log("5. Exit");
 
         var option = Terminal.Prompt("Choose an option above: ");
 
@@ -129,6 +131,12 @@ internal static class Prompts
 
                 break;
             case "4":
+                Terminal.Log($"Opening {instance.name} folder...");
+                Process.Start("explorer.exe", $"{Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData)}\\Kryptonite\\Instances\\{instance.name}\\Beat Saber");
+                Terminal.Log("Press enter to return to the main menu.", hold: true);
+                break;
+            case "5":
+                Terminal.Log("Exiting...");
                 Exit();
                 break;
             default:
