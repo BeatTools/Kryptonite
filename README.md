@@ -1,7 +1,7 @@
 # Kryptonite
 
-![](https://user-images.githubusercontent.com/24845326/153315626-0e7fefb7-3c2f-4955-a321-438aedc53249.png)
-  Finally, an easy-to-use, powerful, multi-instance Beat Saber version manager.
+![image](https://user-images.githubusercontent.com/24845326/153505039-e9172cb2-fa0a-4c08-83e5-df17530965f9.png)
+Finally, an easy-to-use, powerful, multi-instance Beat Saber version manager.
 
 ## ⚠️ Warning ⚠️
 
