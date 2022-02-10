@@ -17,10 +17,7 @@ internal static class Database
 
         using var command = new SQLiteCommand(query, connection);
         args ??= new Dictionary<string, object>();
-        foreach (var (key, value) in args)
-        {
-            command.Parameters.AddWithValue(key, value);
-        }
+        foreach (var (key, value) in args) command.Parameters.AddWithValue(key, value);
 
         return command.ExecuteNonQuery();
     }
@@ -34,10 +31,7 @@ internal static class Database
 
         using var command = new SQLiteCommand(query, connection);
         args ??= new Dictionary<string, object>();
-        foreach (var (key, value) in args)
-        {
-            command.Parameters.AddWithValue(key, value);
-        }
+        foreach (var (key, value) in args) command.Parameters.AddWithValue(key, value);
 
         var dataAdapter = new SQLiteDataAdapter(command);
         var dataTable = new DataTable();
@@ -55,7 +49,7 @@ internal static class Database
         ExecuteWrite(
             @"create table if not exists versions (version  TEXT not null constraint versions_pk primary key, manifest TEXT not null ); create unique index if not exists versions_version_uindex on versions (version);");
     }
-    
+
     // Versions
     public static List<Version>? ListVersions()
     {
@@ -104,7 +98,7 @@ internal static class Database
             .Select(row => new Instance(row.Field<string>("name"), row.Field<string>("version")))
             .ToList();
     }
-    
+
     public static Instance CreateInstance(string name, string version)
     {
         const string query = "insert into instances (name, version) values ($name, $version);";
@@ -136,7 +130,6 @@ internal static class Database
             dataTable.Rows[0].Field<string>("name")!,
             dataTable.Rows[0].Field<string>("version")!
         );
-
     }
 
     public static int DeleteInstance(string name)

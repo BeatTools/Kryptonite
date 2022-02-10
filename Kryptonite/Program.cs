@@ -1,5 +1,4 @@
-﻿using Kryptonite.Types;
-using Kryptonite.Utils;
+﻿using Kryptonite.Utils;
 
 namespace Kryptonite;
 
@@ -9,7 +8,7 @@ internal static class Program
     {
         Initialize.Start(); // Start
 
-        // Main Menu
-        Prompts.Menu();
+        // Main loop
+        while (true) Prompts.MainMenu();
     }
 }

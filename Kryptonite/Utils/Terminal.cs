@@ -30,27 +30,27 @@ internal static class Terminal
     private static string? Read(bool key = false)
     {
         Console.ForegroundColor = ConsoleColor.Blue;
+        Console.Write("> ");
+        var input = key ? Console.ReadKey(true).Key.ToString() : Console.ReadLine();
         Console.ResetColor();
-        return key ? Console.ReadKey().Key.ToString() : Console.ReadLine();
-        
+        return string.IsNullOrWhiteSpace(input) ? null : input;
     }
 
-    public static void Log(string s, bool clear = false)
+    public static void Log(string s, bool clear = false, bool hold = false)
     {
         if (clear) Reset();
         WriteLine(s);
+        if (hold) Console.ReadKey(true);
     }
 
-    public static string? Prompt(string prompt, bool clear = false)
+    public static string? Prompt(string prompt = "", bool clear = false)
     {
-        if (string.IsNullOrWhiteSpace(prompt)) return null;
+        if (prompt == null) throw new ArgumentNullException(nameof(prompt));
         if (clear) Reset();
 
         WriteLine(prompt);
-        Write("> ");
-        Console.ForegroundColor = ConsoleColor.Blue;
         var input = Read();
-        return input;
+        return input ?? null;
     }
 
     private static void Reset()
