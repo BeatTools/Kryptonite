@@ -50,10 +50,7 @@ internal static class Database
             name      TEXT not null,
             version   TEXT not null,
             _default integer default 0 not null
-        );
-
-        create unique index sqlite_autoindex_instances_1 on instances (name);
-        ");
+        );");
 
         ExecuteWrite(@"create table if not exists versions
         (
@@ -61,11 +58,7 @@ internal static class Database
                 constraint versions_pk
                     primary key,
             manifest TEXT not null
-        );
-
-        create unique index versions_version_uindex
-            on versions (version);
-        ");
+        );");
 
         using var client = new HttpClient();
         // Download the SQL for the versions table and execute it (This is to ensure that the versions table is always up to date)
