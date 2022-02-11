@@ -10,6 +10,6 @@ public class User
         this.password = password;
     }
 
-    public string? name { get; }
-    public SecureString? password { get; }
+    public string name { get; }
+    public SecureString password { get; }
 }

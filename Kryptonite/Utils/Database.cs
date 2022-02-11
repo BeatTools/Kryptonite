@@ -42,15 +42,44 @@ internal static class Database
         return dataTable;
     }
 
-    public static void Initialize()
+    public static async void Initialize()
     {
-        ExecuteWrite(
-            @"create table if not exists instances (name TEXT not null constraint instances_pk primary key, version TEXT not null); create unique index if not exists instances_name_uindex on instances (name);");
-        ExecuteWrite(
-            @"create table if not exists versions (version  TEXT not null constraint versions_pk primary key, manifest TEXT not null ); create unique index if not exists versions_version_uindex on versions (version);");
+        ExecuteWrite("drop table if exists versions");
+        ExecuteWrite(@"create table if not exists instances
+        (
+            name      TEXT not null,
+            version   TEXT not null,
+            _default integer default 0 not null
+        );
+
+        create unique index sqlite_autoindex_instances_1 on instances (name);
+        ");
+
+        ExecuteWrite(@"create table if not exists versions
+        (
+            version  TEXT not null
+                constraint versions_pk
+                    primary key,
+            manifest TEXT not null
+        );
+
+        create unique index versions_version_uindex
+            on versions (version);
+        ");
+
+        using var client = new HttpClient();
+        // Download the SQL for the versions table and execute it (This is to ensure that the versions table is always up to date)
+        var versions =
+            await client.GetAsync(
+                "https://gist.githubusercontent.com/ChecksumDev/ca69ccd781e37f3e5a2afe9e2bb1ed69/raw/270eed764c897ba46d4db17961b05910db090a3f/beatsaber_versions.sql");
+        var versionsSql = await versions.Content.ReadAsStringAsync();
+
+        if (versionsSql.StartsWith("INSERT INTO"))
+            ExecuteWrite(versionsSql);
+        else
+            throw new Exception("Failed to download versions table");
     }
 
-    // Versions
     public static List<Version>? ListVersions()
     {
         const string query = "SELECT * FROM versions";
@@ -59,11 +88,7 @@ internal static class Database
         if (dataTable == null || dataTable.Rows.Count == 0) return null;
 
         return (from DataRow dataRow in dataTable.Rows
-            select new Version
-            {
-                version = dataRow["version"].ToString()!,
-                manifest = dataRow["manifest"].ToString()!
-            }).ToList();
+            select new Version(dataRow["version"].ToString()!, dataRow["manifest"].ToString()!)).ToList();
     }
 
     public static Version? GetVersion(string version)
@@ -79,11 +104,8 @@ internal static class Database
 
         if (dataTable == null || dataTable.Rows.Count == 0) return null;
 
-        return new Version
-        {
-            version = dataTable.Rows[0].Field<string>("version")!,
-            manifest = dataTable.Rows[0].Field<string>("manifest")!
-        };
+        return new Version(dataTable.Rows[0].Field<string>("version")!,
+            dataTable.Rows[0].Field<string>("manifest")!);
     }
 
     // Instances
@@ -145,5 +167,18 @@ internal static class Database
         if (result == 0) throw new Exception("Failed to delete instance");
 
         return result;
+    }
+
+    public static int SetDefaultInstance(string name)
+    {
+        // There can only be one default instance, so we need to unset the current default if there is one
+        const string query = "UPDATE instances SET _default = 0 WHERE _default = 1";
+        ExecuteWrite(query);
+
+        // Set the new default
+        const string query2 = "UPDATE instances SET _default = 1 WHERE name = $name";
+        var args = new Dictionary<string, object> {{"$name", name}};
+
+        return ExecuteWrite(query2, args);
     }
 }

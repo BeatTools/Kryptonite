@@ -33,13 +33,11 @@ internal static class Prompts
         }
     }
 
-    public static User Login()
+    private static User Login()
     {
-        Terminal.Log("Please enter your steam username: ");
-        var username = Terminal.Prompt("Username: ");
-        Terminal.Log("Please enter your steam password (will not be displayed): ");
-        var password = Terminal.Prompt("Password: ", password: true);
-        
+        var username = Terminal.Prompt("Please enter your steam username: ");
+        var password = Terminal.Prompt("Please enter your steam password (will not be displayed): ", password: true);
+
         var user = new User(username, password);
         return user;
     }
@@ -47,18 +45,9 @@ internal static class Prompts
     private static void CreateInstance()
     {
         var name = Terminal.Prompt("Enter a name for the new instance: ");
-        var version = Terminal.Prompt("Enter the version of Beat Saber to use: ");
-        var db_version = Database.GetVersion(version);
-
-        if (db_version == null)
+        if (name == null)
         {
-            Terminal.Log("Invalid version. Please try again.");
-            return;
-        }
-
-        if (string.IsNullOrWhiteSpace(name) || string.IsNullOrWhiteSpace(version))
-        {
-            Terminal.Log("Invalid name or version entered! Press any key to return to the main menu.", hold: true);
+            Terminal.Log("Invalid name. Please try again.");
             return;
         }
 
@@ -69,12 +58,25 @@ internal static class Prompts
             return;
         }
 
-        // Create the new instance
+        var versions = Database.ListVersions();
+        foreach (var _version in versions) Terminal.Log($"[-] {_version.version}");
+
+        var version = Terminal.Prompt("Enter the version of Beat Saber to use: ");
+        var dbVersion = Database.GetVersion(version);
+
+        if (dbVersion == null)
+        {
+            Terminal.Log("Invalid version. Please try again.");
+            return;
+        }
+
         try
         {
             var instance = Instance.Create(name, version);
-            DownloadClient.Download(instance, db_version, Login());
-            Terminal.Log($"Created instance {name} for Beat Saber {version}! Press any key to continue...", hold: true);
+            DownloadClient.Download(instance, dbVersion, Login());
+            // Ask if the user wants to set the instance as the default
+            var defaultInstance = Terminal.Prompt("Would you like to set this instance as the default? (y/n): ");
+            if (defaultInstance == "y") Database.SetDefaultInstance(instance.name);
         }
         catch (Exception e)
         {

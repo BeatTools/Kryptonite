@@ -31,8 +31,8 @@ internal static class Terminal
 
     private static string? Read(bool key = false)
     {
-        Console.ForegroundColor = ConsoleColor.Blue;
         Console.Write("> ");
+        Console.ForegroundColor = ConsoleColor.Blue;
         var input = key ? Console.ReadKey(true).Key.ToString() : Console.ReadLine();
         Console.ResetColor();
         return string.IsNullOrWhiteSpace(input) ? null : input;
@@ -48,12 +48,16 @@ internal static class Terminal
     public static SecureString? Prompt(string prompt, bool password, bool clear = false)
     {
         if (prompt == null) throw new ArgumentNullException(nameof(prompt));
+        if (!password)
+            throw new ArgumentException("Password-less password prompt is not supported...?", nameof(password));
         if (clear) Reset();
-        if (!password) return null;
-        
+
         var pass = new SecureString();
-        Console.Write(prompt);
+        WriteLine(prompt);
         ConsoleKeyInfo key;
+
+        Console.Write("> ");
+        Console.ForegroundColor = ConsoleColor.Blue;
 
         do
         {
@@ -63,20 +67,20 @@ internal static class Terminal
             {
                 case false:
                     pass.AppendChar(key.KeyChar);
-                    Console.Write("*");
+                    Write("*");
                     break;
                 default:
                 {
                     if (key.Key != ConsoleKey.Backspace || pass.Length <= 0) continue;
                     pass.RemoveAt(pass.Length - 1);
-                    Console.Write("\b \b");
+                    Write("\b \b");
                     break;
                 }
             }
         } while (key.Key != ConsoleKey.Enter);
 
+        Write("\n");
         return pass;
-
     }
 
 

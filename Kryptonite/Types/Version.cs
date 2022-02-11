@@ -2,6 +2,12 @@
 
 public class Version
 {
-    public string? version { get; init; }
-    public string? manifest { get; init; }
+    public Version(string version, string manifest)
+    {
+        this.version = version;
+        this.manifest = manifest;
+    }
+
+    public string version { get; }
+    public string manifest { get; }
 }

@@ -1,5 +1,5 @@
 ﻿using System.Diagnostics;
-using System.Security;
+using System.Net;
 using Kryptonite.Types;
 using Version = Kryptonite.Types.Version;
 
@@ -9,29 +9,25 @@ public static class DownloadClient
 {
     public static void Download(Instance instance, Version version, User user)
     {
-        var beatSaberPath = $"{Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData)}\\Kryptonite\\Instances\\{instance.name}\\Beat Saber";
-        
+        var beatSaberPath =
+            $"{Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData)}\\Kryptonite\\Instances\\{instance.name}\\Beat Saber";
+
         try
         {
             Terminal.Log($"Downloading Beat Saber v{version.version}");
-            var download = Process.Start("dotnet", $"DepotDownloader\\DepotDownloader.dll -app 620980 -depot 620981 -manifest {version.manifest} -username {user.name} -password {new System.Net.NetworkCredential(string.Empty, user.password).Password} -dir \"Beat Saber\" -validate");
-            
+            var download = Process.Start("dotnet",
+                $"DepotDownloader\\DepotDownloader.dll -app 620980 -depot 620981 -manifest {version.manifest} -username {user.name} -password {new NetworkCredential(string.Empty, user.password).Password} -dir \"{beatSaberPath}\" -validate");
+
             download.WaitForExit();
-            if (download.ExitCode != 0)
-            {
-                Terminal.Log("Download failed");
-                return;
-            }
-            Terminal.Log("Download complete, moving files to correct location");
-            Directory.Move("Beat Saber", $"{beatSaberPath}");
-            Terminal.Log("Beat Saber moved to correct location");
-            
-            Terminal.Log($"Successfully downloaded Beat Saber v{version.version}\nPress any key to continue",
+            Terminal.Log(
+                download.ExitCode == 0
+                    ? $"Successfully downloaded Beat Saber v{version.version}\nPress any key to return to the main menu."
+                    : $"Error: Received exit code {download.ExitCode} from Depot Downloader.\nPress any key to return to the main menu.",
                 hold: true);
         }
         catch (Exception e)
         {
-            Terminal.Log("Error downloading Beat Saber: " + e.Message);
+            Terminal.Log("Error downloading Beat Saber: " + e.Message, hold: true);
         }
     }
 }
