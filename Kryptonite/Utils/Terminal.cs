@@ -1,4 +1,6 @@
-﻿namespace Kryptonite.Utils;
+﻿using System.Security;
+
+namespace Kryptonite.Utils;
 
 internal static class Terminal
 {
@@ -42,6 +44,41 @@ internal static class Terminal
         WriteLine(s);
         if (hold) Console.ReadKey(true);
     }
+
+    public static SecureString? Prompt(string prompt, bool password, bool clear = false)
+    {
+        if (prompt == null) throw new ArgumentNullException(nameof(prompt));
+        if (clear) Reset();
+        if (!password) return null;
+        
+        var pass = new SecureString();
+        Console.Write(prompt);
+        ConsoleKeyInfo key;
+
+        do
+        {
+            key = Console.ReadKey(true);
+
+            switch (char.IsControl(key.KeyChar))
+            {
+                case false:
+                    pass.AppendChar(key.KeyChar);
+                    Console.Write("*");
+                    break;
+                default:
+                {
+                    if (key.Key != ConsoleKey.Backspace || pass.Length <= 0) continue;
+                    pass.RemoveAt(pass.Length - 1);
+                    Console.Write("\b \b");
+                    break;
+                }
+            }
+        } while (key.Key != ConsoleKey.Enter);
+
+        return pass;
+
+    }
+
 
     public static string? Prompt(string prompt = "", bool clear = false)
     {

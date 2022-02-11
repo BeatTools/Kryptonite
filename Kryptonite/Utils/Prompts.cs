@@ -33,10 +33,28 @@ internal static class Prompts
         }
     }
 
+    public static User Login()
+    {
+        Terminal.Log("Please enter your steam username: ");
+        var username = Terminal.Prompt("Username: ");
+        Terminal.Log("Please enter your steam password (will not be displayed): ");
+        var password = Terminal.Prompt("Password: ", password: true);
+        
+        var user = new User(username, password);
+        return user;
+    }
+
     private static void CreateInstance()
     {
         var name = Terminal.Prompt("Enter a name for the new instance: ");
         var version = Terminal.Prompt("Enter the version of Beat Saber to use: ");
+        var db_version = Database.GetVersion(version);
+
+        if (db_version == null)
+        {
+            Terminal.Log("Invalid version. Please try again.");
+            return;
+        }
 
         if (string.IsNullOrWhiteSpace(name) || string.IsNullOrWhiteSpace(version))
         {
@@ -54,7 +72,8 @@ internal static class Prompts
         // Create the new instance
         try
         {
-            Instance.Create(name, version);
+            var instance = Instance.Create(name, version);
+            DownloadClient.Download(instance, db_version, Login());
             Terminal.Log($"Created instance {name} for Beat Saber {version}! Press any key to continue...", hold: true);
         }
         catch (Exception e)
@@ -132,7 +151,8 @@ internal static class Prompts
                 break;
             case "4":
                 Terminal.Log($"Opening {instance.name} folder...");
-                Process.Start("explorer.exe", $"{Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData)}\\Kryptonite\\Instances\\{instance.name}\\Beat Saber");
+                Process.Start("explorer.exe",
+                    $"{Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData)}\\Kryptonite\\Instances\\{instance.name}\\Beat Saber");
                 Terminal.Log("Press enter to return to the main menu.", hold: true);
                 break;
             case "5":

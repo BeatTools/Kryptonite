@@ -10,8 +10,8 @@ public class Instance
         this.version = version;
     }
 
-    public string? name { get; init; }
-    public string? version { get; init; }
+    public string? name { get; }
+    public string? version { get; }
 
     public static string ConnUri { get; } =
         $"Data Source = {Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData)}\\Kryptonite\\storage.db";
