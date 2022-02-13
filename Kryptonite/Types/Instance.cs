@@ -1,40 +1,71 @@
-﻿using Kryptonite.Utils;
+﻿using System.Diagnostics;
+using Kryptonite.Utils;
 
 namespace Kryptonite.Types;
 
 public class Instance
 {
-    public Instance(string? name, string? version)
+    public Instance(string name, string version)
     {
-        this.name = name;
-        this.version = version;
+        Name = name;
+        Version = version;
     }
 
-    public string name { get; }
-    public string version { get; }
+    public string Name { get; }
+    public string Version { get; }
 
-    public static Instance Create(string? name, string? version)
+    private readonly string _path =
+        $"{Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData)}\\Kryptonite\\Instances";
+
+    public static Instance Create(string name, string version)
     {
         if (Database.GetInstance(name) != null) throw new Exception("Instance already exists");
 
         var instance = Database.CreateInstance(name, version);
-
-        var instancePath = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData),
-            "Kryptonite", "instances", name);
-        Directory.CreateDirectory(instancePath);
+        Directory.CreateDirectory($"{instance._path}\\{name}");
 
         return instance;
     }
 
-    public static void Delete(string? name)
+    public static void Delete(string name)
     {
         var instance = Database.GetInstance(name);
         if (instance == null) throw new Exception("Instance does not exist");
 
-        Database.DeleteInstance(name);
+        try
+        {
+            Database.DeleteInstance(name);
+            Directory.Delete($"{instance._path}\\{name}", true);
+        }
+        catch (Exception e)
+        {
+            Console.WriteLine(e);
+            throw;
+        }
+    }
 
-        var instancePath = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData),
-            "Kryptonite", "instances", name);
-        Directory.Delete(instancePath, true);
+    public static void Launch(Instance instance, string? args = null)
+    {
+        if (instance == null) throw new Exception("Instance does not exist");
+        args ??= "";
+
+        var p = new Process
+        {
+            StartInfo = new ProcessStartInfo($"{instance._path}\\{instance.Name}\\Beat Saber.exe", args)
+            {
+                UseShellExecute = false,
+                WorkingDirectory = $"{instance._path}\\{instance.Name}",
+            }
+        };
+
+        try
+        {
+            p.StartInfo.Environment["SteamAppId"] = "620980";
+            p.Start();
+        }
+        catch (Exception ex)
+        {
+            Terminal.Log(ex.Message);
+        }
     }
 }
