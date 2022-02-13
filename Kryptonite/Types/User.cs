@@ -4,12 +4,12 @@ namespace Kryptonite.Types;
 
 public class User
 {
-    public User(string? name, SecureString? password)
+    public User(string name, SecureString password)
     {
-        this.name = name;
-        this.password = password;
+        Name = name;
+        Password = password;
     }
 
-    public string name { get; }
-    public SecureString password { get; }
+    public string Name { get; }
+    public SecureString Password { get; }
 }
