@@ -45,7 +45,7 @@ internal static class Terminal
         if (hold) Console.ReadKey(true);
     }
 
-    public static SecureString? Prompt(string prompt, bool password, bool clear = false)
+    public static SecureString Prompt(string prompt, bool password, bool clear = false)
     {
         if (prompt == null) throw new ArgumentNullException(nameof(prompt));
         if (!password)
@@ -55,7 +55,7 @@ internal static class Terminal
         var pass = new SecureString();
         WriteLine(prompt);
         ConsoleKeyInfo key;
-
+        Console.ForegroundColor = ConsoleColor.Cyan;
         Console.Write("> ");
         Console.ForegroundColor = ConsoleColor.Blue;
 
