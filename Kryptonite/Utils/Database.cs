@@ -44,9 +44,9 @@ internal static class Database
 
     public static async void Initialize()
     {
-        Terminal.Log("Dropping versions table...");
+        Terminal.Log("[-] Dropping versions table...");
         ExecuteWrite("drop table if exists versions");
-        Terminal.Log("Creating instances table...");
+        Terminal.Log("[-] Creating instances table...");
         ExecuteWrite(@"create table if not exists instances
         (
             name      TEXT not null,
@@ -54,7 +54,7 @@ internal static class Database
             _default integer default 0 not null
         );");
 
-        Terminal.Log("Creating versions table...");
+        Terminal.Log("[-] Creating versions table...");
         ExecuteWrite(@"create table if not exists versions
         (
             version  TEXT not null
@@ -63,7 +63,7 @@ internal static class Database
             manifest TEXT not null
         );");
         
-        Terminal.Log("Getting versions...");
+        Terminal.Log("[-] Getting versions...");
         using var client = new HttpClient();
         using var versions = await client.GetAsync("https://gist.githubusercontent.com/ChecksumDev/ca69ccd781e37f3e5a2afe9e2bb1ed69/raw/270eed764c897ba46d4db17961b05910db090a3f/beatsaber_versions.sql");
         var versionsSql = await versions.Content.ReadAsStringAsync();
