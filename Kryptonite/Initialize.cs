@@ -9,7 +9,7 @@ internal static class Initialize
         var globalStorage = Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData);
         var storage = Path.Combine(globalStorage, "Kryptonite");
         var instancesDirectory = Path.Combine(storage + "\\Instances");
-        
+
         Terminal.Log("[-] Initializing Kryptonite...");
 
         Terminal.Log("[-] Checking for AppData folder...");
