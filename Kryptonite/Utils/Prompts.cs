@@ -168,7 +168,7 @@ internal static class Prompts
             case "4":
                 Process.Start("explorer.exe",
                     $"{Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData)}" +
-                    $"\\Beat Saber\\Instances\\{instance.Name}");
+                    $"\\Kryptonite\\Beat Saber\\Instances\\{instance.Name}");
                 break;
 
             case "5":

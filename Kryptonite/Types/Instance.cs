@@ -54,7 +54,7 @@ public class Instance
             StartInfo = new ProcessStartInfo($"{instance._path}\\{instance.Name}\\Beat Saber\\Beat Saber.exe", args)
             {
                 UseShellExecute = false,
-                WorkingDirectory = $"{instance._path}\\{instance.Name}\\Beat Saber\\{instance.Name}",
+                WorkingDirectory = $"{instance._path}\\{instance.Name}\\Beat Saber",
             }
         };
 
