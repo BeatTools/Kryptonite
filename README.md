@@ -1,12 +1,36 @@
-# Kryptonite
+___
+<p align="center">
+  <img align="center" src="https://user-images.githubusercontent.com/24845326/153734503-031658ab-138d-44f4-b508-e50d73da0a81.png">
+</p>
 
-![image](https://user-images.githubusercontent.com/24845326/153505039-e9172cb2-fa0a-4c08-83e5-df17530965f9.png)
-Finally, an easy-to-use, powerful, multi-instance Beat Saber version manager.
+___
 
-## ⚠️ Warning ⚠️
+## ❔ What is this?
+Kryptonite is a multi-instance, Beat Saber version manager;
+We make it easy to create, delete, and manage different versions and or instances of Beat Saber automagically 🪄
 
-This application is under active development and is most defientally not ready for production use!
+This **prevents steam** from auto-updating the instances and breaking your instance of Beat Saber; While simultaniously providing an easy way to upgrade, downgrade, and manage your instances!
 
-### Looking to contribute?
+## 🌠 Features
+- Multiple instances are supported
+- Named instances!
+- Supports multiple of the same versions
+- And more!
 
-Send me a message @ checksum#0001 on Discord.
+## 🧰 Built With
+
+- C#
+- Coffee
+
+## 🌌 Roadmap
+
+- [ ] Quickstarting
+- [ ] Default Instance Support
+- [ ] Auto song symlinking
+- [ ] More?? Send us a PR!
+
+## 🤝 Support
+
+Contributions, issues, and feature requests are welcome!
+
+Don't hesitate to give us a ⭐️ if you like this project!
