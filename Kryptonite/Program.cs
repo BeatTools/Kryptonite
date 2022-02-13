@@ -8,7 +8,6 @@ internal static class Program
     {
         Initialize.Start(); // Start
 
-        // Main loop
         while (true) Prompts.MainMenu();
     }
 }
