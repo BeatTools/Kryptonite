@@ -90,32 +90,25 @@ internal static class Prompts
     private static void SelectInstance()
     {
         var instances = InstanceManager.List();
-
-        if (instances == null || instances.Count == 0)
+        if (instances.Count == 0)
         {
-            Terminal.Log("No instances found!", true);
+            Terminal.Log("No instances found. Please create one first.", hold: true);
             return;
         }
 
-        foreach (var instance in instances) Terminal.Log($"{instance.Name}: {instance.Version}");
-
-        var name = Terminal.Prompt("Enter the name of the instance to select: ");
-
-        if (name == null)
+        foreach (var i in instances)
         {
-            Terminal.Log("Invalid name entered! Press enter to return to the main menu.", hold: true);
-            return;
+            Terminal.Log($"{i.Name} ({i.Version})");
         }
-
-        var dbInstance = InstanceManager.Get(name);
-
-        if (dbInstance == null)
-        {
-            Terminal.Log("Instance not found! Press enter to return to the main menu.", hold: true);
-            return;
-        }
-
-        InstanceMenu(dbInstance);
+        
+        var name = Terminal.Prompt("Please enter the name of the instance you want to use: ");
+        if (string.IsNullOrWhiteSpace(name)) throw new KryptoniteException("Instance name cannot be empty.");
+        
+        if (instances.All(i => i.Name != name)) throw new KryptoniteException("Instance does not exist.");
+        
+        var instance = instances.First(i => i.Name == name);
+        
+        InstanceMenu(instance);
     }
 
     private static void InstanceMenu(Instance instance)
