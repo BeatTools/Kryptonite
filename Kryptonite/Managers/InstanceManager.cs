@@ -12,7 +12,7 @@ namespace Kryptonite.Managers;
 public interface InstanceManager
 {
     private static readonly string InstancePath =
-        $"{Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData)}\\Kryptonite\\Instances\\";
+        $"{Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData)}\\Kryptonite\\Instances\\";
 
     /// <summary>
     ///     This method is responsible for sanitizing the name of an instance.
@@ -23,11 +23,6 @@ public interface InstanceManager
     {
         return Regex.Replace(name.ToLower(), @"[^a-zA-Z0-9]", "");
     }
-    
-    public static string TestInstanceName(string name)
-    {
-        return SafeInstanceName(name);
-    }
 
     /// <summary>
     ///     Creates a new instance.
@@ -35,16 +30,20 @@ public interface InstanceManager
     /// <param name="name">The name of the instance.</param>
     /// <param name="version">The version of the instance.</param>
     /// <returns>The created instance.</returns>
-    public static Instance CreateInstance(string name, string version)
+    public static Instance? Create(string name, string version)
     {
         name = SafeInstanceName(name);
-        if (DatabaseManager.GetInstance(name) != null) throw new KryptoniteException("Instance already exists");
-        var instancePath = $"{InstancePath}{name}";
-        if (!Directory.Exists(instancePath)) Directory.CreateDirectory(instancePath);
+        
+        if (string.IsNullOrWhiteSpace(name)) return null;
 
-        var instance = DatabaseManager.CreateInstance(name, version);
-        DownloadClient.Download(
-        return new Instance(instance["name"], instance["version"]);
+        var dbInstance = DatabaseManager.Instances.Get(name);
+        if (dbInstance != null) return null;
+        
+        var dbVersion = VersionManager.Get(version);
+        if (dbVersion == null) return null;
+        
+        var instance = new Instance(name, dbVersion, 0);
+        return instance;
     }
 
     /// <summary>
@@ -52,12 +51,26 @@ public interface InstanceManager
     /// </summary>
     /// <param name="name">The name of the instance.</param>
     /// <returns>The instance.</returns>
-    public static Instance GetInstance(string name)
+    public static Instance? Get(string name)
     {
-        var instance = DatabaseManager.GetInstance(name);
-        if (instance == null) throw new KryptoniteException("Instance does not exist");
+        name = SafeInstanceName(name);
 
-        return new Instance(instance["name"], instance["version"]);
+        var dbInstance = DatabaseManager.Instances.Get(name);
+        if (dbInstance == null)
+        {
+            return null;
+        }
+
+        var dbVersion = DatabaseManager.Versions.Get(dbInstance["version"].ToString()!);
+        if (dbVersion == null)
+        {
+            return null;
+        }
+
+        var version = new GameVersion(dbVersion["version"].ToString()!, dbVersion["manifest"].ToString()!);
+        var instance = new Instance(dbInstance["name"].ToString()!, version, (int) dbInstance["default"]);
+
+        return instance;
     }
 
     /// <summary>
@@ -65,12 +78,15 @@ public interface InstanceManager
     /// </summary>
     /// <returns>The default instance.</returns>
     /// <exception cref="Exception">Thrown when the specified instance does not exist.</exception>
-    public static Instance SetDefaultInstance()
+    public static bool SetDefault(string name)
     {
-        var instance = DatabaseManager.GetDefaultInstance();
-        if (instance == null) throw new KryptoniteException("Instance does not exist");
+        var instance = Get(name);
+        if (instance == null)
+        {
+            throw new Exception("The specified instance does not exist.");
+        }
 
-        return new Instance(instance["name"], instance["version"]);
+        return true;
     }
 
     /// <summary>
@@ -78,22 +94,43 @@ public interface InstanceManager
     /// </summary>
     /// <returns>The default instance.</returns>
     /// <exception cref="Exception">Thrown when the specified instance does not exist.</exception>
-    public static Instance GetDefaultInstance()
+    public static Instance? GetDefault()
     {
-        var instance = DatabaseManager.GetDefaultInstance();
-        if (instance == null) throw new KryptoniteException("Instance does not exist");
+        var dbInstance = DatabaseManager.Instances.GetDefault();
+        if (dbInstance == null)
+        {
+            return null;
+        }
 
-        return new Instance(instance["name"], instance["version"]);
+        var dbVersion = DatabaseManager.Versions.Get(dbInstance["version"].ToString()!);
+        if (dbVersion == null)
+        {
+            return null;
+        }
+
+        var version = new GameVersion(dbVersion["version"].ToString()!, dbVersion["manifest"].ToString()!);
+        var instance = new Instance(dbInstance["name"].ToString()!, version, (int) dbInstance["default"]);
+
+        return instance;
     }
 
     /// <summary>
     ///     Gets all instances.
     /// </summary>
     /// <returns>A List of all instances.</returns>
-    public static List<Instance> ListInstances()
+    public static List<Instance>? List()
     {
-        var instances = DatabaseManager.ListInstances();
-        return instances.Select(instance => new Instance(instance["name"], instance["version"])).ToList();
+        var dbInstances = DatabaseManager.Instances.List();
+        if (dbInstances == null)
+        {
+            return null;
+        }
+
+        return (from dbInstance in dbInstances
+            let dbVersion = DatabaseManager.Versions.Get(dbInstance["version"].ToString()!)
+            where dbVersion != null
+            let version = new GameVersion(dbVersion["version"].ToString()!, dbVersion["manifest"].ToString()!)
+            select new Instance(dbInstance["name"].ToString()!, version, (int) dbInstance["default"])).ToList();
     }
 
     /// <summary>
@@ -102,13 +139,16 @@ public interface InstanceManager
     /// <param name="name">The name of the instance.</param>
     /// <returns></returns>
     /// <exception cref="Exception">Instance does not exist</exception>
-    public static bool DeleteInstance(string name)
+    public static bool Delete(string name)
     {
-        var instance = DatabaseManager.GetInstance(name);
-        if (instance == null) throw new KryptoniteException("Instance does not exist");
-        var instancePath = $"{InstancePath}{name}";
-        if (Directory.Exists(instancePath)) Directory.Delete(instancePath, true);
+        name = SafeInstanceName(name);
 
-        return DatabaseManager.DeleteInstance(name);
+        var dbInstance = DatabaseManager.Instances.Get(name);
+        if (dbInstance == null)
+        {
+            throw new Exception("Instance does not exist");
+        }
+        
+        return DatabaseManager.Instances.Delete(name);
     }
 }

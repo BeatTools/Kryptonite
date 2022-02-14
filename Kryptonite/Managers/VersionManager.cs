@@ -1,5 +1,4 @@
 ﻿using Kryptonite.Types;
-using Kryptonite.Types.Exceptions;
 using Kryptonite.Utils;
 
 namespace Kryptonite.Managers;
@@ -12,14 +11,16 @@ public interface VersionManager
     /// <summary>
     ///     Returns the <see cref="GameVersion" /> object for the given version.
     /// </summary>
-    /// <param name="version">The version to get the <see cref="GameVersion" /> object for.</param>
+    /// <param name="v">The version to get the <see cref="GameVersion" /> object for.</param>
     /// <returns>The <see cref="GameVersion" /> object for the given version.</returns>
-    public static GameVersion GetVersion(string version)
+    public static GameVersion? Get(string v)
     {
-        var dbVersion = DatabaseManager.GetVersion(version);
-        if (dbVersion == null) throw new KryptoniteException("Version not found");
+        var dbVersion = DatabaseManager.Versions.Get(v);
 
-        return new GameVersion(dbVersion["version"], dbVersion["manifest"]);
+        if (dbVersion == null) return null;
+
+        return new GameVersion(dbVersion["version"].ToString()!,
+            dbVersion["manifest"].ToString()!);
     }
 
     /// <summary>
@@ -27,12 +28,13 @@ public interface VersionManager
     /// </summary>
     /// <returns><see cref="List{GameVersion}" /> of all <see cref="GameVersion" /> objects.</returns>
     /// <exception cref="Exception">Thrown if there are no versions in the database.</exception>
-    public static List<GameVersion> ListVersions()
+    public static List<GameVersion>? List()
     {
-        var versions = DatabaseManager.ListVersions();
-        if (versions == null) throw new KryptoniteException("No versions found in database");
+        var versions = DatabaseManager.Versions.List();
+        
+        if (versions == null || versions.Count == 0) return null;
 
-        return (from version in versions
-            select new GameVersion(version["version"], version["manifest"])).ToList();
+        return versions.Select(version => new GameVersion(version["version"].ToString()!,
+            version["manifest"].ToString()!)).ToList();
     }
 }

@@ -16,22 +16,27 @@ public static class DownloadClient
     /// <param name="instance">The Kryptonite instance.</param>
     /// <param name="version">The version of Beat Saber to download.</param>
     /// <param name="user">The user to download Beat Saber as.</param>
-    public static void Download(Instance instance, GameVersion version, User user)
+    public static void Download(string name, GameVersion version, User user)
     {
         var beatSaberPath =
-            $"{Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData)}\\Kryptonite\\Instances\\{instance.Name}\\Beat Saber";
-
+            $"{Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData)}\\Kryptonite\\Instances\\{name}\\Beat Saber";
+        var downloadsPath =
+            $"{Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData)}\\Kryptonite\\Downloads\\{name}";
+        
         try
         {
-            Terminal.Log($"Downloading Beat Saber v{version.Version} for {instance.Name}...");
+            Directory.CreateDirectory(downloadsPath);
+            Terminal.Log($"Downloading Beat Saber v{version.Version} for {name}...");
             using var download = Process.Start("dotnet",
                 $"DepotDownloader\\DepotDownloader.dll -app 620980 -depot 620981 -manifest {version.Manifest} -username {user.Name} -password {new NetworkCredential(string.Empty, user.Password).Password} -dir \"{beatSaberPath}\" -validate");
             download.WaitForExit();
-            Terminal.Log(
-                download.ExitCode == 0
-                    ? $"Successfully downloaded Beat Saber v{version.Version}\nPress any key to return to the main menu."
-                    : $"Error: Received exit code {download.ExitCode} from Depot Downloader.\nPress any key to return to the main menu.",
-                hold: true);
+            if (download.ExitCode != 0)
+            {
+                throw new KryptoniteException("Failed to download Beat Saber.");
+            }
+            
+            Directory.CreateDirectory(beatSaberPath);
+            Directory.Move($"{downloadsPath}", $"{beatSaberPath}\\Beat Saber");
         }
         catch (KryptoniteException e)
         {

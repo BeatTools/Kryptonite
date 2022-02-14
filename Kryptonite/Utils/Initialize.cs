@@ -4,12 +4,17 @@ internal static class Initialize
 {
     public static void Start()
     {
-        var globalStorage = Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData);
+        var globalStorage = Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData);
         var storage = Path.Combine(globalStorage, "Kryptonite");
+        var downloadsDirectory = Path.Combine(storage, "Downloads");
         var instancesDirectory = Path.Combine(storage + "\\Instances");
 
         Terminal.Log("[-] Initializing Kryptonite...");
-
+        
+        Terminal.Log("[-] Cleaning up old Kryptonite folders...");
+        if (Directory.Exists(downloadsDirectory)) Directory.Delete(downloadsDirectory, true);
+        Directory.CreateDirectory(downloadsDirectory);
+        
         Terminal.Log("[-] Checking for AppData folder...");
         Directory.CreateDirectory(storage);
 

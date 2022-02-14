@@ -58,35 +58,42 @@ internal static class Prompts
     {
         var name = Terminal.Prompt("Please enter a name for your new instance: ");
         if (string.IsNullOrWhiteSpace(name)) throw new KryptoniteException("Instance name cannot be empty.");
-        var dbInstance = InstanceManager.GetInstance(name);
-        if (dbInstance != null) throw new KryptoniteException("Instance already exists.");
 
-        Terminal.Log("Listing all available versions...");
-        var versions = VersionManager.ListVersions();
-        Terminal.Log($"Found {versions.Count} versions.");
-        
-        foreach (var _version in versions)
+        if (InstanceManager.Get(name) != null) throw new KryptoniteException("Instance already exists.");
+
+        var versions = VersionManager.List();
+        foreach (var v in versions)
         {
-            Terminal.Log($"{_version.Version} ({_version.Manifest})");
+            Terminal.Log($"{v.Version}: {v.Manifest}");
         }
         
         var version = Terminal.Prompt("Please enter the version of Beat Saber you want to use: ");
         if (string.IsNullOrWhiteSpace(version)) throw new KryptoniteException("Version cannot be empty.");
         
-        var dbVersion = VersionManager.GetVersion(version);
-        if (dbVersion == null) throw new KryptoniteException("Version does not exist.");
-        var user = Login();
+        if (versions.All(v => v.Version != version)) throw new KryptoniteException("Version does not exist.");
 
-        DownloadClient.Download(dbInstance, dbVersion, user);
+        var user = Login();
+        
+        try
+        {
+            DownloadClient.Download(name, versions.First(v => v.Version == version), user);
+        } catch (Exception e)
+        {
+            Terminal.Log(e.Message);
+            return;
+        }
+        
+        InstanceManager.Create(name, version);
+        Terminal.Log($"Successfully created instance {name}.\nPress any key to continue...", hold: true);
     }
 
     private static void SelectInstance()
     {
-        var instances = DatabaseManager.ListInstances();
+        var instances = InstanceManager.List();
 
         if (instances == null || instances.Count == 0)
         {
-            Terminal.Log("No instances found!");
+            Terminal.Log("No instances found!", true);
             return;
         }
 
@@ -100,7 +107,7 @@ internal static class Prompts
             return;
         }
 
-        var dbInstance = DatabaseManager.GetInstance(name);
+        var dbInstance = InstanceManager.Get(name);
 
         if (dbInstance == null)
         {
@@ -126,7 +133,7 @@ internal static class Prompts
         switch (option)
         {
             case "1":
-                Instance.Launch(instance);
+                // Instance.Launch(instance);
                 Terminal.Log("Successfully launched Beat Saber! Press enter to return to the main menu.", hold: true);
                 break;
             case "2":
@@ -138,7 +145,7 @@ internal static class Prompts
 
                 if (delete.ToLower() == "y")
                 {
-                    Instance.Delete(instance.Name);
+                    // Instance.Delete(instance.Name);
                     Terminal.Log("Successfully deleted the instance! Press enter to return to the main menu.",
                         hold: true);
                 }
@@ -151,7 +158,7 @@ internal static class Prompts
 
             case "4":
                 Process.Start("explorer.exe",
-                    $"{Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData)}" +
+                    $"{Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData)}" +
                     $"\\Kryptonite\\Beat Saber\\Instances\\{instance.Name}");
                 break;
 

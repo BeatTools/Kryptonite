@@ -9,7 +9,7 @@ namespace Kryptonite.Utils;
 internal static class DatabaseManager
 {
     private static readonly string ConnUri =
-        $"Data Source = {Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData)}\\Kryptonite\\storage.db";
+        $"Data Source = {Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData)}\\Kryptonite\\storage.db";
 
     /// <summary>
     ///     Executes a query on the database.
@@ -55,6 +55,136 @@ internal static class DatabaseManager
         return dataTable;
     }
 
+    public static class Versions
+    {
+        public static List<Dictionary<string, object>>? List()
+        {
+            const string query = "SELECT * FROM versions";
+
+            var dataTable = Execute(query);
+            return dataTable == null
+                ? null
+                : (from DataRow row in dataTable.Rows
+                    select new Dictionary<string, object>
+                        {{"version", row["version"].ToString()}, {"manifest", row["manifest"].ToString()}}).ToList();
+        }
+
+        public static Dictionary<string, object>? Get(string version)
+        {
+            const string query = "SELECT * FROM versions WHERE version = $version";
+
+            var args = new Dictionary<string, object> {{"$version", version}};
+            var dataTable = Execute(query, args);
+
+            if (dataTable == null || dataTable.Rows.Count == 0) return null;
+
+            var row = dataTable.Rows[0];
+            return new Dictionary<string, object>
+            {
+                {"version", row["version"].ToString()},
+                {"manifest", row["manifest"].ToString()}
+            };
+        }
+    }
+
+    public static class Instances
+    {
+        public static List<Dictionary<string, object>>? List()
+        {
+            const string query = "SELECT * FROM instances";
+
+            var dataTable = Execute(query);
+            if (dataTable == null || dataTable.Rows.Count == 0) return null;
+
+            var instances = (from DataRow row in dataTable.Rows
+                select new Dictionary<string, object>
+                {
+                    {"name", row["name"].ToString()},
+                    {"version", row["version"].ToString()},
+                    {"default", row["_default"].ToString()}
+                }).ToList();
+
+            return instances;
+        }
+
+        public static Dictionary<string, object> Create(string name, string version)
+        {
+            const string query = "insert into instances (name, version) values ($name, $version);";
+
+            var args = new Dictionary<string, object> {{"$name", name}, {"$version", version}};
+
+            var result = ExecuteWrite(query, args);
+            if (result == 0) throw new KryptoniteException("Failed to create instance");
+
+            return new Dictionary<string, object>
+            {
+                {"name", name},
+                {"version", version},
+                {"default", 0}
+            };
+        }
+
+        public static Dictionary<string, object>? Get(string name)
+        {
+            const string query = "SELECT name, version FROM instances WHERE name = $name";
+
+            var args = new Dictionary<string, object> {{"$name", name}};
+
+            var dataTable = Execute(query, args);
+
+            if (dataTable == null || dataTable.Rows.Count == 0) return null;
+
+            return new Dictionary<string, object>
+            {
+                {"name", dataTable.Rows[0]["name"].ToString()},
+                {"version", dataTable.Rows[0]["version"].ToString()},
+                {"default", 0}
+            };
+        }
+
+        public static bool SetDefault(Instance instance)
+        {
+            // There can only be one default instance, so we need to unset the current default if there is one
+            const string query = "UPDATE instances SET _default = 0 WHERE _default = 1";
+            ExecuteWrite(query);
+
+            // Set the new default
+            const string query2 = "UPDATE instances SET _default = 1 WHERE name = $name";
+            var args = new Dictionary<string, object> {{"$name", instance.Name}};
+            var result = ExecuteWrite(query2, args);
+
+            return result == 1;
+        }
+
+        public static Dictionary<string, object>? GetDefault()
+        {
+            const string query = "SELECT name, version FROM instances WHERE _default = 1";
+            var dataTable = Execute(query);
+
+            if (dataTable == null || dataTable.Rows.Count == 0) return null;
+
+            return new Dictionary<string, object>
+            {
+                {"name", dataTable.Rows[0]["name"].ToString()},
+                {"version", dataTable.Rows[0]["version"].ToString()},
+                {"default", 1}
+            };
+        }
+
+        public static bool Delete(string name)
+        {
+            const string query = "DELETE FROM instances WHERE name = $name";
+
+            var args = new Dictionary<string, object>
+            {
+                {"$name", name}
+            };
+
+            var result = ExecuteWrite(query, args);
+            return result == 1;
+        }
+    }
+
     public static async void Initialize()
     {
         Terminal.Log("[-] Dropping versions table...");
@@ -84,122 +214,13 @@ internal static class DatabaseManager
         var versionsSql = await versions.Content.ReadAsStringAsync();
 
         if (versions.StatusCode == HttpStatusCode.OK && versionsSql.StartsWith("INSERT INTO"))
+        {
+            Terminal.Log("[-] Inserting versions...");
             ExecuteWrite(versionsSql);
+        }
         else
-            throw new KryptoniteException("Failed to download versions table from GitHub.");
-    }
-
-    // Versions
-    public static List<Dictionary<string, string>>? ListVersions()
-    {
-        const string query = "SELECT * FROM versions";
-
-        var dataTable = Execute(query);
-        if (dataTable == null) throw new KryptoniteException("Failed to get versions.");
-
-        var versions = (from DataRow row in dataTable.Rows
-            select new Dictionary<string, string>
-                {{"version", row["version"].ToString()}, {"manifest", row["manifest"].ToString()}}).ToList();
-    }
-
-    public static Dictionary<string, string>? GetVersion(string version)
-    {
-        const string query = "SELECT * FROM versions WHERE version = $version";
-
-        var args = new Dictionary<string, object> {{"$version", version}};
-        var dataTable = Execute(query, args);
-
-        if (dataTable == null || dataTable.Rows.Count == 0) return null;
-
-        var row = dataTable.Rows[0];
-        return new Dictionary<string, string>
         {
-            {"version", row["version"].ToString()},
-            {"manifest", row["manifest"].ToString()}
-        };
-    }
-
-    // Instances
-    public static List<Dictionary<string, string>>? ListInstances()
-    {
-        const string query = "SELECT * FROM instances";
-
-        var dataTable = Execute(query);
-        if (dataTable == null || dataTable.Rows.Count == 0) return null;
-
-        return (from DataRow dataRow in dataTable.Rows
-            select new Dictionary<string, string>
-            {
-                {"name", dataRow["name"].ToString()},
-                {"version", dataRow["version"].ToString()},
-                {"default", dataRow["_default"].ToString()}
-            }).ToList();
-    }
-
-    public static Dictionary<string, string> CreateInstance(string name, string version)
-    {
-        const string query = "insert into instances (name, version) values ($name, $version);";
-
-        var args = new Dictionary<string, object> {{"$name", name}, {"$version", version}};
-
-        var result = ExecuteWrite(query, args);
-        if (result == 0) throw new KryptoniteException("Failed to create instance");
-
-        return new Dictionary<string, string> {{"name", name}, {"version", version}};
-    }
-
-    public static Dictionary<string, string>? GetInstance(string name)
-    {
-        const string query = "SELECT name, version FROM instances WHERE name = $name";
-
-        var args = new Dictionary<string, object> {{"$name", name}};
-
-        var dataTable = Execute(query, args);
-
-        if (dataTable == null || dataTable.Rows.Count == 0) return null;
-
-        return new Dictionary<string, string>
-        {
-            {"name", dataTable.Rows[0].Field<string>("name")!}, {"version", dataTable.Rows[0].Field<string>("version")!}
-        };
-    }
-
-    public static int SetDefaultInstance(Instance instance)
-    {
-        // There can only be one default instance, so we need to unset the current default if there is one
-        const string query = "UPDATE instances SET _default = 0 WHERE _default = 1";
-        ExecuteWrite(query);
-
-        // Set the new default
-        const string query2 = "UPDATE instances SET _default = 1 WHERE name = $name";
-        var args = new Dictionary<string, object> {{"$name", instance.Name}};
-
-        return ExecuteWrite(query2, args);
-    }
-
-    public static Dictionary<string, string>? GetDefaultInstance()
-    {
-        const string query = "SELECT name, version FROM instances WHERE _default = 1";
-        var dataTable = Execute(query);
-
-        if (dataTable == null || dataTable.Rows.Count == 0) return null;
-        return new Dictionary<string, string>
-        {
-            {"name", dataTable.Rows[0].Field<string>("name")!},
-            {"version", dataTable.Rows[0].Field<string>("version")!}
-        };
-    }
-
-    public static bool DeleteInstance(string name)
-    {
-        const string query = "DELETE FROM instances WHERE name = $name";
-
-        var args = new Dictionary<string, object>
-        {
-            {"$name", name}
-        };
-
-        var result = ExecuteWrite(query, args);
-        return result != 0;
+            Terminal.Log("[-] Failed to get versions!");
+        }
     }
 }
