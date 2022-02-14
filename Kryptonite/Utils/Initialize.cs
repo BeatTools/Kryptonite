@@ -1,6 +1,4 @@
-﻿using Kryptonite.Utils;
-
-namespace Kryptonite;
+﻿namespace Kryptonite.Utils;
 
 internal static class Initialize
 {
@@ -18,7 +16,7 @@ internal static class Initialize
         Terminal.Log("[-] Checking for instances folder...");
         Directory.CreateDirectory(instancesDirectory);
 
-        Terminal.Log("[-] Initializing Database (this might take a second)...");
-        Database.Initialize();
+        Terminal.Log("[-] Initializing DatabaseManager (this might take a second)...");
+        DatabaseManager.Initialize();
     }
 }

@@ -8,6 +8,13 @@ public class GameVersion
         Manifest = manifest;
     }
 
+    /// <summary>
+    ///     The version of Beat Saber.
+    /// </summary>
     public string Version { get; }
+
+    /// <summary>
+    ///     The steam manifest hash for this version.
+    /// </summary>
     public string Manifest { get; }
 }

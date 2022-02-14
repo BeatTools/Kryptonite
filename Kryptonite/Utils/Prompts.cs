@@ -1,5 +1,7 @@
 ﻿using System.Diagnostics;
+using Kryptonite.Managers;
 using Kryptonite.Types;
+using Kryptonite.Types.Exceptions;
 
 namespace Kryptonite.Utils;
 
@@ -18,6 +20,9 @@ internal static class Prompts
 
         switch (option)
         {
+            case "0":
+                Quickstart();
+                break;
             case "1":
                 CreateInstance();
                 break;
@@ -34,12 +39,16 @@ internal static class Prompts
         }
     }
 
+    private static void Quickstart()
+    {
+    }
+
     private static User Login()
     {
         var username = Terminal.Prompt("Please enter your steam username: ");
         var password = Terminal.Prompt("Please enter your steam password (will not be displayed): ", password: true);
 
-        if (string.IsNullOrWhiteSpace(username)) throw new Exception("Username cannot be empty.");
+        if (string.IsNullOrWhiteSpace(username)) throw new KryptoniteException("Username cannot be empty.");
 
         var user = new User(username, password);
         return user;
@@ -47,57 +56,33 @@ internal static class Prompts
 
     private static void CreateInstance()
     {
-        var name = Terminal.Prompt("Enter a name for the new instance: ");
-        if (name == null)
+        var name = Terminal.Prompt("Please enter a name for your new instance: ");
+        if (string.IsNullOrWhiteSpace(name)) throw new KryptoniteException("Instance name cannot be empty.");
+        var dbInstance = InstanceManager.GetInstance(name);
+        if (dbInstance != null) throw new KryptoniteException("Instance already exists.");
+
+        Terminal.Log("Listing all available versions...");
+        var versions = VersionManager.ListVersions();
+        Terminal.Log($"Found {versions.Count} versions.");
+        
+        foreach (var _version in versions)
         {
-            Terminal.Log("Invalid name. Please try again.");
-            return;
+            Terminal.Log($"{_version.Version} ({_version.Manifest})");
         }
+        
+        var version = Terminal.Prompt("Please enter the version of Beat Saber you want to use: ");
+        if (string.IsNullOrWhiteSpace(version)) throw new KryptoniteException("Version cannot be empty.");
+        
+        var dbVersion = VersionManager.GetVersion(version);
+        if (dbVersion == null) throw new KryptoniteException("Version does not exist.");
+        var user = Login();
 
-        if (Database.GetInstance($"{name}") != null)
-        {
-            Terminal.Log("An instance with that name already exists! Press any key to return to the main menu.",
-                hold: true);
-            return;
-        }
-
-        var versions = Database.ListVersions();
-        foreach (var versionInc in versions) Terminal.Log($"[-] {versionInc.Version}");
-
-        var version = Terminal.Prompt("Enter the version of Beat Saber to use: ");
-        if (string.IsNullOrWhiteSpace(version))
-        {
-            Terminal.Log("Invalid version. Please try again.");
-            return;
-        }
-
-        var dbVersion = Database.GetVersion(version);
-
-        if (dbVersion == null)
-        {
-            Terminal.Log("Invalid version. Please try again.");
-            return;
-        }
-
-        try
-        {
-            var instance = Instance.Create(name, version);
-            DownloadClient.Download(instance, dbVersion, Login());
-            
-            var defaultInstance = Terminal.Prompt("Would you like to set this instance as the default? (y/n): ");
-            if (defaultInstance == "y") Database.SetDefaultInstance(instance);
-
-            Terminal.Log("Instance created successfully! Press any key to return to the main menu.", hold: true);
-        }
-        catch (Exception e)
-        {
-            Terminal.Log($"An error occurred while creating the instance: {e.Message}", hold: true);
-        }
+        DownloadClient.Download(dbInstance, dbVersion, user);
     }
 
     private static void SelectInstance()
     {
-        var instances = Database.ListInstances();
+        var instances = DatabaseManager.ListInstances();
 
         if (instances == null || instances.Count == 0)
         {
@@ -115,7 +100,7 @@ internal static class Prompts
             return;
         }
 
-        var dbInstance = Database.GetInstance(name);
+        var dbInstance = DatabaseManager.GetInstance(name);
 
         if (dbInstance == null)
         {
@@ -150,11 +135,10 @@ internal static class Prompts
             case "3":
                 var delete = Terminal.Prompt("Are you sure you want to delete this instance? (y/n): ");
                 delete ??= "n";
-                
+
                 if (delete.ToLower() == "y")
                 {
-                    
-                    Database.DeleteInstance(instance.Name!);
+                    Instance.Delete(instance.Name);
                     Terminal.Log("Successfully deleted the instance! Press enter to return to the main menu.",
                         hold: true);
                 }
