@@ -1,13 +1,12 @@
-﻿using Kryptonite.Managers;
-using Kryptonite.Utils;
+﻿using Kryptonite.Utils;
 
 namespace Kryptonite;
 
 internal static class Program
 {
-    private static void Main()
+    private static async Task Main()
     {
-        Initialize.Start();
+        await Initialize.Start();
         while (true) Prompts.MainMenu();
     }
 }

@@ -1,6 +1,5 @@
 ﻿using System.Text.RegularExpressions;
 using Kryptonite.Types;
-using Kryptonite.Types.Exceptions;
 using Kryptonite.Utils;
 
 namespace Kryptonite.Managers;
@@ -33,16 +32,52 @@ public interface InstanceManager
     public static Instance? Create(string name, string version)
     {
         name = SafeInstanceName(name);
-        
+
         if (string.IsNullOrWhiteSpace(name)) return null;
 
         var dbInstance = DatabaseManager.Instances.Get(name);
         if (dbInstance != null) return null;
-        
+
         var dbVersion = VersionManager.Get(version);
         if (dbVersion == null) return null;
-        
+
+        try
+        {
+            DatabaseManager.Instances.Create(name, version);
+        }
+        catch (Exception e)
+        {
+            Terminal.Log($"Failed to create instance: {e.Message}");
+            throw;
+        }
+
         var instance = new Instance(name, dbVersion, 0);
+        return instance;
+    }
+
+    public static Instance? Update(string name, string version)
+    {
+        name = SafeInstanceName(name);
+
+        if (string.IsNullOrWhiteSpace(name)) return null;
+
+        var dbInstance = DatabaseManager.Instances.Get(name);
+        if (dbInstance == null) return null;
+
+        var dbVersion = VersionManager.Get(version);
+        if (dbVersion == null) return null;
+
+        try
+        {
+            DatabaseManager.Instances.Update(name, version);
+        }
+        catch (Exception e)
+        {
+            Terminal.Log($"Failed to update instance: {e.Message}", hold: true);
+            throw;
+        }
+
+        var instance = new Instance(name, dbVersion, (long) dbInstance["default"]);
         return instance;
     }
 
@@ -56,16 +91,10 @@ public interface InstanceManager
         name = SafeInstanceName(name);
 
         var dbInstance = DatabaseManager.Instances.Get(name);
-        if (dbInstance == null)
-        {
-            return null;
-        }
+        if (dbInstance == null) return null;
 
         var dbVersion = DatabaseManager.Versions.Get(dbInstance["version"].ToString()!);
-        if (dbVersion == null)
-        {
-            return null;
-        }
+        if (dbVersion == null) return null;
 
         var version = new GameVersion(dbVersion["version"].ToString()!, dbVersion["manifest"].ToString()!);
         var instance = new Instance(dbInstance["name"].ToString()!, version, (int) dbInstance["default"]);
@@ -81,10 +110,7 @@ public interface InstanceManager
     public static bool SetDefault(string name)
     {
         var instance = Get(name);
-        if (instance == null)
-        {
-            throw new Exception("The specified instance does not exist.");
-        }
+        if (instance == null) throw new Exception("The specified instance does not exist.");
 
         return true;
     }
@@ -97,16 +123,10 @@ public interface InstanceManager
     public static Instance? GetDefault()
     {
         var dbInstance = DatabaseManager.Instances.GetDefault();
-        if (dbInstance == null)
-        {
-            return null;
-        }
+        if (dbInstance == null) return null;
 
         var dbVersion = DatabaseManager.Versions.Get(dbInstance["version"].ToString()!);
-        if (dbVersion == null)
-        {
-            return null;
-        }
+        if (dbVersion == null) return null;
 
         var version = new GameVersion(dbVersion["version"].ToString()!, dbVersion["manifest"].ToString()!);
         var instance = new Instance(dbInstance["name"].ToString()!, version, (int) dbInstance["default"]);
@@ -121,16 +141,13 @@ public interface InstanceManager
     public static List<Instance>? List()
     {
         var dbInstances = DatabaseManager.Instances.List();
-        if (dbInstances == null)
-        {
-            return null;
-        }
-
-        return (from dbInstance in dbInstances
-            let dbVersion = DatabaseManager.Versions.Get(dbInstance["version"].ToString()!)
-            where dbVersion != null
-            let version = new GameVersion(dbVersion["version"].ToString()!, dbVersion["manifest"].ToString()!)
-            select new Instance(dbInstance["name"].ToString()!, version, (int) dbInstance["default"])).ToList();
+        return dbInstances == null
+            ? null
+            : (from dbInstance in dbInstances
+                let dbVersion = DatabaseManager.Versions.Get(dbInstance["version"].ToString()!)
+                where dbVersion != null
+                let version = new GameVersion(dbVersion["version"].ToString()!, dbVersion["manifest"].ToString()!)
+                select new Instance(dbInstance["name"].ToString()!, version, (long) dbInstance["default"])).ToList();
     }
 
     /// <summary>
@@ -144,11 +161,8 @@ public interface InstanceManager
         name = SafeInstanceName(name);
 
         var dbInstance = DatabaseManager.Instances.Get(name);
-        if (dbInstance == null)
-        {
-            throw new Exception("Instance does not exist");
-        }
-        
+        if (dbInstance == null) throw new Exception("Instance does not exist");
+
         return DatabaseManager.Instances.Delete(name);
     }
 }

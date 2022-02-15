@@ -3,8 +3,9 @@ using System.Data.SQLite;
 using System.Net;
 using Kryptonite.Types;
 using Kryptonite.Types.Exceptions;
+using Kryptonite.Utils;
 
-namespace Kryptonite.Utils;
+namespace Kryptonite.Managers;
 
 internal static class DatabaseManager
 {
@@ -55,6 +56,45 @@ internal static class DatabaseManager
         return dataTable;
     }
 
+    public static async Task Initialize()
+    {
+        Terminal.Log("[-] Dropping versions table...");
+        ExecuteWrite("drop table if exists versions");
+        Terminal.Log("[-] Creating instances table...");
+        ExecuteWrite(@"create table if not exists instances
+        (
+            name      TEXT not null,
+            version   TEXT not null,
+            _default integer default 0 not null
+        );");
+
+        Terminal.Log("[-] Creating versions table...");
+        ExecuteWrite(@"create table if not exists versions
+        (
+            version  TEXT not null
+                constraint versions_pk
+                    primary key,
+            manifest TEXT not null
+        );");
+
+        Terminal.Log("[-] Getting versions...");
+        using var client = new HttpClient();
+        using var versions =
+            await client.GetAsync(
+                "https://gist.githubusercontent.com/ChecksumDev/ca69ccd781e37f3e5a2afe9e2bb1ed69/raw/270eed764c897ba46d4db17961b05910db090a3f/beatsaber_versions.sql");
+        var versionsSql = await versions.Content.ReadAsStringAsync();
+
+        if (versions.StatusCode == HttpStatusCode.OK && versionsSql.StartsWith("INSERT INTO"))
+        {
+            Terminal.Log("[-] Inserting versions...");
+            ExecuteWrite(versionsSql);
+        }
+        else
+        {
+            Terminal.Log("[-] Failed to get versions!");
+        }
+    }
+
     public static class Versions
     {
         public static List<Dictionary<string, object>>? List()
@@ -99,9 +139,9 @@ internal static class DatabaseManager
             var instances = (from DataRow row in dataTable.Rows
                 select new Dictionary<string, object>
                 {
-                    {"name", row["name"].ToString()},
-                    {"version", row["version"].ToString()},
-                    {"default", row["_default"].ToString()}
+                    {"name", row["name"]},
+                    {"version", row["version"]},
+                    {"default", row["_default"]}
                 }).ToList();
 
             return instances;
@@ -121,6 +161,32 @@ internal static class DatabaseManager
                 {"name", name},
                 {"version", version},
                 {"default", 0}
+            };
+        }
+
+        public static Dictionary<string, object>? Update(string name, string version)
+        {
+            const string query1 = "SELECT * FROM instances WHERE name = $name";
+            var args = new Dictionary<string, object> {{"$name", name}};
+
+            var dataTable = Execute(query1, args);
+            if (dataTable == null || dataTable.Rows.Count == 0) return null;
+
+            var row = dataTable.Rows[0];
+            var oldVersion = row["version"].ToString();
+            var oldDefault = row["_default"];
+
+            const string query2 = "UPDATE instances SET version = $version WHERE name = $name";
+            args = new Dictionary<string, object> {{"$name", name}, {"$version", version}};
+            var result = ExecuteWrite(query2, args);
+            if (result == 0) throw new KryptoniteException("Failed to update instance");
+
+            return new Dictionary<string, object>
+            {
+                {"name", name},
+                {"version", version},
+                {"default", oldDefault},
+                {"oldVersion", oldVersion!}
             };
         }
 
@@ -182,45 +248,6 @@ internal static class DatabaseManager
 
             var result = ExecuteWrite(query, args);
             return result == 1;
-        }
-    }
-
-    public static async void Initialize()
-    {
-        Terminal.Log("[-] Dropping versions table...");
-        ExecuteWrite("drop table if exists versions");
-        Terminal.Log("[-] Creating instances table...");
-        ExecuteWrite(@"create table if not exists instances
-        (
-            name      TEXT not null,
-            version   TEXT not null,
-            _default integer default 0 not null
-        );");
-
-        Terminal.Log("[-] Creating versions table...");
-        ExecuteWrite(@"create table if not exists versions
-        (
-            version  TEXT not null
-                constraint versions_pk
-                    primary key,
-            manifest TEXT not null
-        );");
-
-        Terminal.Log("[-] Getting versions...");
-        using var client = new HttpClient();
-        using var versions =
-            await client.GetAsync(
-                "https://gist.githubusercontent.com/ChecksumDev/ca69ccd781e37f3e5a2afe9e2bb1ed69/raw/270eed764c897ba46d4db17961b05910db090a3f/beatsaber_versions.sql");
-        var versionsSql = await versions.Content.ReadAsStringAsync();
-
-        if (versions.StatusCode == HttpStatusCode.OK && versionsSql.StartsWith("INSERT INTO"))
-        {
-            Terminal.Log("[-] Inserting versions...");
-            ExecuteWrite(versionsSql);
-        }
-        else
-        {
-            Terminal.Log("[-] Failed to get versions!");
         }
     }
 }

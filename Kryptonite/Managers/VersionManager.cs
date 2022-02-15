@@ -1,5 +1,4 @@
 ﻿using Kryptonite.Types;
-using Kryptonite.Utils;
 
 namespace Kryptonite.Managers;
 
@@ -31,7 +30,7 @@ public interface VersionManager
     public static List<GameVersion>? List()
     {
         var versions = DatabaseManager.Versions.List();
-        
+
         if (versions == null || versions.Count == 0) return null;
 
         return versions.Select(version => new GameVersion(version["version"].ToString()!,
