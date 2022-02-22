@@ -12,7 +12,7 @@
         <FileVersion>1.0.0.0</FileVersion>
         <NeutralLanguage>en</NeutralLanguage>
         <!-- <AssemblyOriginatorKeyFile>Checksum.snk</AssemblyOriginatorKeyFile> -->
-        <PublicSign>true</PublicSign>
+        <!-- <PublicSign>true</PublicSign> -->
         <LangVersion>default</LangVersion>
         <IsPackable>false</IsPackable>
     </PropertyGroup>
