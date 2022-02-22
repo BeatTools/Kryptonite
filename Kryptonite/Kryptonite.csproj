@@ -11,7 +11,7 @@
         <AssemblyVersion>1.0.0.0</AssemblyVersion>
         <FileVersion>1.0.0.0</FileVersion>
         <NeutralLanguage>en</NeutralLanguage>
-        <AssemblyOriginatorKeyFile>Checksum.snk</AssemblyOriginatorKeyFile>
+        <!-- <AssemblyOriginatorKeyFile>Checksum.snk</AssemblyOriginatorKeyFile> -->
         <PublicSign>true</PublicSign>
         <LangVersion>default</LangVersion>
         <IsPackable>false</IsPackable>
