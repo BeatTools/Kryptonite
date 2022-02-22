@@ -26,7 +26,7 @@ jobs:
       run: msbuild -nologo -v:m -p:Configuration=Release Kryptonite.sln
     
     - name: Download DepotDownloader 🧱
-      run: curl https://github.com/SteamRE/DepotDownloader/releases/download/DepotDownloader_2.4.5/depotdownloader-2.4.5.zip -O -J -L -o ${{ github.workspace }}\Kryptonite\bin\Release\DepotDownloader.zip
+      run: curl https://github.com/SteamRE/DepotDownloader/releases/download/DepotDownloader_2.4.5/depotdownloader-2.4.5.zip -J -L -o ${{ github.workspace }}\Kryptonite\bin\Release\DepotDownloader.zip
 
     - name: Package DepotDownloader for release 🧱
       run: 7z x ${{ github.workspace }}\Kryptonite\bin\Release\DepotDownloader.zip -o${{ github.workspace }}\Kryptonite\bin\Release\DepotDownloader.zip
