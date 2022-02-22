@@ -1,0 +1,49 @@
+name: Build Kryptonite
+
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+    branches: [ main ]
+
+jobs:
+  build:
+    runs-on: windows-2022
+
+    steps:
+    - name: Checkout ✨
+      uses: actions/checkout@v2
+      with:
+        fetch-depth: 0
+
+    - name: Add msbuild to PATH 🔗
+      uses: microsoft/setup-msbuild@v1.1
+
+    - name: Install dependencies 📦
+      run: nuget restore Kryptonite.sln
+
+    - name: Build Kryptonite for release 🧱
+      run: msbuild -nologo -v:m -p:Configuration=Release Kryptonite.sln
+
+    - name: Archive Kryptonite 🧱
+      uses: thedoctor0/zip-release@master
+      with:
+        path: ${{ github.workspace }}\Kryptonite\bin\Release\.
+        exclusions: '*.xml* *.cmd* *.pdb* libraries\*.xml* libraries\*.pdb*'
+        type: 'zip'
+        filename: 'Kryptonite.zip'
+    
+    - name: Generate release tag 🧱
+      id: tag
+      run: |
+        echo "::set-output name=release_tag::Release $(date +"%Y.%m.%d_%H-%M")"
+        
+    - name: Upload Release 📦
+      id: upload-release-asset 
+      uses: softprops/action-gh-release@v1
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      with:
+        tag_name: ${{ steps.tag.outputs.release_tag }}
+        files: |
+          Kryptonite.zip
