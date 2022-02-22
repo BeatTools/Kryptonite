@@ -25,11 +25,11 @@ jobs:
     - name: Build Kryptonite for release 🧱
       run: msbuild -nologo -v:m -p:Configuration=Release Kryptonite.sln
     
-    - name: Download a file
+    - name: Download DepotDownloader 🧱
       run: curl https://github.com/SteamRE/DepotDownloader/releases/download/DepotDownloader_2.4.5/depotdownloader-2.4.5.zip -o ${{ github.workspace }}\Kryptonite\bin\Release\depotdownloader-2.4.5.zip
 
     - name: Package DepotDownloader for release 🧱
-      run: 7z x ${{ github.workspace }}\Kryptonite\bin\Release\depotdownloader-2.4.5.zip:${{ github.workspace }}\Kryptonite\bin\Release\depotdownloader-2.4.5.zip
+      run: 7z x ${{ github.workspace }}\Kryptonite\bin\Release\depotdownloader-2.4.5.zip -o ${{ github.workspace }}\Kryptonite\bin\Release\depotdownloader-2.4.5.zip
       
     - name: Archive Kryptonite 🧱
       uses: thedoctor0/zip-release@master
@@ -39,7 +39,7 @@ jobs:
         type: 'zip'
         filename: 'Kryptonite.zip'
     
-    - name: Generate release tag 🧱
+    - name: Generate release tag 📦
       id: tag
       run: |
         echo "::set-output name=release_tag::Release_$(date +"%Y.%m.%d_%H-%M")"
