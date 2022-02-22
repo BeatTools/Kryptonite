@@ -36,7 +36,7 @@ jobs:
     - name: Generate release tag 🧱
       id: tag
       run: |
-        echo "::set-output name=release_tag::Release $(date +"%Y.%m.%d_%H-%M")"
+        echo "::set-output name=release_tag::Release_$(date +"%Y.%m.%d_%H-%M")"
         
     - name: Upload Release 📦
       id: upload-release-asset 
