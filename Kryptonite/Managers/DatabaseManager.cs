@@ -81,7 +81,7 @@ internal static class DatabaseManager
         using var client = new HttpClient();
         using var versions =
             await client.GetAsync(
-                "https://gist.githubusercontent.com/ChecksumDev/ca69ccd781e37f3e5a2afe9e2bb1ed69/raw/270eed764c897ba46d4db17961b05910db090a3f/beatsaber_versions.sql");
+                "https://gist.githubusercontent.com/ChecksumDev/ca69ccd781e37f3e5a2afe9e2bb1ed69/raw/1fb0e650a6d61f728497b263cf42b71f8cf30c3f/beatsaber_versions.sql");
         var versionsSql = await versions.Content.ReadAsStringAsync();
 
         if (versions.StatusCode == HttpStatusCode.OK && versionsSql.StartsWith("INSERT INTO"))
