@@ -27,7 +27,7 @@ public class Instance
     public static Task Launch(Instance instance, string? args = null)
     {
         if (instance == null) throw new Exception("Instance does not exist");
-        args ??= "-vrmode oculus";
+        args ??= "";
 
         var p = new Process
         {
